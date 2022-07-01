@@ -1,122 +1,158 @@
 import time
+import os
 from selenium import webdriver
+from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.common.alert import Alert
 from selenium.webdriver.edge.service import Service
 from webdriver_manager.microsoft import EdgeChromiumDriverManager
 
-evento = input('Digite o evento: ')
+evento = []
+contador = int('0')
+for contador in range(3):
+    evento.append(input('Digite o evento: '))
+    contador + 1
 
-#Linha abaixo para a instalação da última versão do Webdriver (Microsoft Edge)
+def linha(txt):
+    print('-'*41)
+    print(txt)
+    print('-'*41)
+
+# Instalação da última versão do Webdriver (Microsoft Edge)
 driver = webdriver.Edge(service=Service(EdgeChromiumDriverManager().install()))
 
-
-#Maximizar janela
+# Maximizar janela
 driver.maximize_window()
 
-#Abertura da página inicial do ITSM
+# Abertura da página inicial do ITSM
 driver.get("url.omitida")
 time.sleep(2)
 
-#Click na lupa de busca da página inicial
-lupa = driver.find_element_by_xpath('/html/body/div/div/div/header/div[1]/div/div[2]/div/div[4]/form')
-lupa.click()
+for evt in evento:
+    if evt != (''):
 
-#Inserção e busca pelo EVENTO
-busca = driver.find_element_by_xpath('//*[@id="sysparm_search"]')
-busca.send_keys(evento)
-busca.send_keys(Keys.ENTER)
-time.sleep(10)
+        # Acessando o iFrame default (Necessário para fechar mais de 1 EVT)
+        driver.switch_to.default_content()
 
-#Acessando o iFrame onde estão os elementos da página
-driver.switch_to.frame("gsft_main")
+        # Click na lupa de busca da página inicial
+        lupa = driver.find_element(By.XPATH, '/html/body/div/div/div/header/div[1]/div/div[2]/div/div[4]/form').click()
 
-# ****** APLICAÇÃO DO TEMPLATE (Oscilação de Link) ******
-dotsClick = driver.find_element_by_xpath('//*[@id="toggleMoreOptions"]').click()
-tempBar = driver.find_element_by_xpath('//*[@id="template-toggle-button"]').click()
-dotsBarClick = driver.find_element_by_xpath('//*[@id="template-bar-aria-container"]/div/button[1]').click()
-filtTemp = driver.find_element_by_xpath('//*[@id="overflowTemplateSearch"]')
-filtTemp.send_keys("Oscilação de Link")
-tempClick = driver.find_element_by_xpath('//*[@id="templateOverflowContainer"]/div/ul/li[11]/a[1]').click()
-time.sleep(5)
-barClose = driver.find_element_by_xpath('//*[@id="template-bar-aria-container"]/div/button[3]').click()
+        # Inserção e busca pelo EVENTO
+        busca = driver.find_element(By.XPATH, '//*[@id="sysparm_search"]')
+        busca.send_keys(evt)
+        busca.send_keys(Keys.ENTER)
+        time.sleep(2)
+        busca.click()
+        busca.send_keys(Keys.ESCAPE)
 
-# ****** SELEÇÃO DO STATUS CLOSE OR CANCEL TASK ******
-dropdown = driver.find_element_by_name("u_rim_event.u_next_step_displayed")
-ddown = Select(dropdown)
-ddown.select_by_visible_text("Close or cancel task")
+        # Acessando o iFrame onde estão os elementos da página
+        driver.switch_to.frame("gsft_main")
 
-# ****** Obter valores dos campos de FILA e NOME ******
-fila = driver.find_element_by_xpath('//*[@id="sys_display.u_rim_event.u_owner_group"]').get_attribute('value')
-nome = driver.find_element_by_xpath('//*[@id="sys_display.u_rim_event.assigned_to"]').get_attribute('value')
+        # ****** Priorization - Baixando a Prioridade do ticket ******
+        # Impact
+        dropdown = driver.find_element(By.NAME, "u_rim_event.impact")
+        ddown = Select(dropdown)
+        ddown.select_by_visible_text("Significant")
+        # Urgency
+        dropdown = driver.find_element(By.NAME, "u_rim_event.urgency")
+        ddown = Select(dropdown)
+        ddown.select_by_visible_text("Normal")
 
-# ****** Campos Ownership & Assignment ******
+        # ****** APLICAÇÃO DO TEMPLATE Incident Event ******
+        dotsClick = driver.find_element(By.XPATH, '//*[@id="toggleMoreOptions"]').click()
+        tempBar = driver.find_element(By.XPATH, '//*[@id="template-toggle-button"]').click()
+        dotsBarClick = driver.find_element(By.XPATH, '//*[@id="template-bar-aria-container"]/div/button[1]').click()
+        filtTemp = driver.find_element(By.XPATH, '//*[@id="overflowTemplateSearch"]')
+        filtTemp.send_keys("Incident Event")
+        tempClick = driver.find_element(By.XPATH, '//*[@id="templateOverflowContainer"]/div/ul/li[6]/a[1]').click()
+        time.sleep(5)
+        saveBtn = driver.find_element(By.XPATH, '//*[@id="sysverb_update_and_stay"]').click()
+        time.sleep(5)
 
-#Responsible Group
-resGroup = driver.find_element_by_xpath('//*[@id="sys_display.u_rim_event.u_responsible_owner_group"]')
-resGroup.clear()
-resGroup.send_keys(fila)
-time.sleep(2)
-#resGroup.send_keys(Keys.ARROW_DOWN)
-#resGroup.send_keys(Keys.ENTER)
+        # ****** APLICAÇÃO DO TEMPLATE (Oscilação de Link) ******
+        dotsBarClick = driver.find_element(By.XPATH, '//*[@id="template-bar-aria-container"]/div/button[1]').click()
+        filtTemp = driver.find_element(By.XPATH, '//*[@id="overflowTemplateSearch"]')
+        filtTemp.send_keys("Oscilação de Link")
+        tempClick = driver.find_element(By.XPATH, '//*[@id="templateOverflowContainer"]/div/ul/li[11]/a[1]').click()
+        time.sleep(5)
+        barClose = driver.find_element(By.XPATH, '//*[@id="template-bar-aria-container"]/div/button[3]').click()
 
-#Responsible Owner
-resOwner = driver.find_element_by_xpath('//*[@id="sys_display.u_rim_event.u_responsible_owner"]')
-resOwner.clear()
-resOwner.send_keys(nome)
-time.sleep(2)
-#resOwner.send_keys(Keys.ARROW_DOWN)
-#resOwner.send_keys(Keys.ENTER)
+        # ****** SELEÇÃO DO STATUS CLOSE OR CANCEL TASK ******
+        dropdown = driver.find_element(By.NAME, "u_rim_event.u_next_step_displayed")
+        ddown = Select(dropdown)
+        ddown.select_by_visible_text("Close or cancel task")
 
-# ****** CAMPOS DA ABA CLOSURE DETAILS ******
+        # ****** Obter valores dos campos de FILA e NOME ******
+        fila = driver.find_element(By.XPATH, '//*[@id="sys_display.u_rim_event.u_owner_group"]').get_attribute('value')
+        nome = driver.find_element(By.XPATH, '//*[@id="sys_display.u_rim_event.assigned_to"]').get_attribute('value')
 
-#Aba Closure Details
-abaClosDet = driver.find_element_by_xpath('/html/body/div[2]/form/div[1]/span[6]/span[1]')
-abaClosDet.click()
+        # ****** Campos Ownership & Assignment ******
 
-""" #Resolution Code
-resCode = driver.find_element_by_xpath('//*[@id="sys_display.u_rim_event.u_task_resolution_code"]')
-resCode.send_keys("Carrier")
-time.sleep(5)
-resCode.send_keys(Keys.ARROW_DOWN)
-resCode.send_keys(Keys.ENTER)
+        # Responsible Group
+        resGroupCheck = bool(driver.find_element(By.XPATH, '//*[@id="sys_display.u_rim_event.u_responsible_owner_group"]').get_attribute('value'))
+        
+        if resGroupCheck == False or resGroupCheck != (fila):
+            resGroup = driver.find_element(By.XPATH, '//*[@id="sys_display.u_rim_event.u_responsible_owner_group"]')
+            resGroup.clear()
+            resGroup.send_keys(fila)
+            time.sleep(2)
+            
+        # Responsible Owner
+        resOwnerCheck = bool(driver.find_element(By.XPATH, '//*[@id="sys_display.u_rim_event.u_responsible_owner"]').get_attribute('value'))
+        if resOwnerCheck == False or resOwnerCheck != (nome):
+            resOwner = driver.find_element(By.XPATH, '//*[@id="sys_display.u_rim_event.u_responsible_owner"]')
+            resOwner.clear()
+            resOwner.send_keys(nome)
+            time.sleep(2)
 
-#Root cause
-rootCause = driver.find_element_by_xpath('//*[@id="sys_display.u_rim_event.u_task_rootcause"]')
-rootCause.send_keys("Carrier")
-time.sleep(5)
-rootCause.send_keys(Keys.ARROW_DOWN)
-rootCause.send_keys(Keys.ENTER) """
+        # ****** CAMPOS DA ABA CLOSURE DETAILS ******
 
-#Closure details
-closDetails = driver.find_element_by_xpath('//*[@id="u_rim_event.close_notes"]')
-closDetails.clear()
-closDetails.send_keys("Oscilação no link da operadora, normalizado sem intervenção.")
+        # Aba Closure Details
+        abaClosDet = driver.find_element(By.XPATH, '/html/body/div[2]/form/div[1]/span[6]/span[1]').click()
 
-""" #Root cause comments
-rootComm = driver.find_element_by_xpath('//*[@id="u_rim_event.u_root_cause_comments"]')
-rootComm.send_keys("Breve instabilidade no link da operadora.") """
+        # Closure Details
+        closDetails = driver.find_element(By.XPATH, '//*[@id="u_rim_event.close_notes"]')
+        closDetails.clear()
+        closDetails.send_keys("Oscilação no link da operadora, normalizado sem intervenção.")
 
-#Resolved by
-resolvedBy = driver.find_element_by_xpath('//*[@id="sys_display.u_rim_event.u_resolved_by"]')
-resolvedBy.clear()
-resolvedBy.send_keys(nome)
-time.sleep(3)
+        # Resolved by
+        resolvedByCheck = bool(driver.find_element(By.XPATH, '//*[@id="sys_display.u_rim_event.u_resolved_by"]').get_attribute('value'))    
+        if resolvedByCheck == False:
+            resolvedBy = driver.find_element(By.XPATH, '//*[@id="sys_display.u_rim_event.u_resolved_by"]')
+            resolvedBy.send_keys(nome)
+            time.sleep(2)
 
-#Clique do botão Save ao finalizar o processo
-saveBtn = driver.find_element_by_xpath('//*[@id="sysverb_update_and_stay"]').click()
-time.sleep(10)
+        # Clique do botão Save ao finalizar o processo
+        saveBtn = driver.find_element(By.XPATH, '//*[@id="sysverb_update_and_stay"]').click()
+        time.sleep(10)
 
-# ****** SELEÇÃO DO STATUS CLOSE FINAL ******
-dropdown = driver.find_element_by_name("u_rim_event.u_next_step_displayed")
-ddown = Select(dropdown)
-ddown.select_by_visible_text("Set to closed")
-time.sleep(1)
+        # ****** SELEÇÃO DO STATUS CLOSE FINAL ******
+        dropdown = driver.find_element(By.NAME, "u_rim_event.u_next_step_displayed")
+        ddown = Select(dropdown)
+        ddown.select_by_visible_text("Set to closed")
+        time.sleep(1)
 
-# ****** OK DO ALERT FINAL ******
-alert = Alert(driver)
-alert.accept()
-saveBtn = driver.find_element_by_xpath('//*[@id="sysverb_update_and_stay"]').click()
-time.sleep(10)
+        # ****** OK DO ALERT FINAL ******
+        alert = Alert(driver)
+        alert.accept()
+        #alert.accept()
+        saveBtn = driver.find_element(By.XPATH, '//*[@id="sysverb_update_and_stay"]').click()
+        os.system("cls")
+        linha('Validando o encerramento. Aguarde...')
+        time.sleep(5)
+
+        # Validando o encerramento ou não do evento informado
+        encerra = driver.find_element(By.XPATH, '//*[@id="sys_readonly.u_rim_event.state"]').get_attribute('value')
+        if encerra == '7':
+            # os.system("cls")
+            linha('O ' + evt + ' foi encerrado com sucesso!')
+            time.sleep(5)
+        else:
+            # os.system("cls")
+            (linha('Não foi possível encerrar o ' + evt + '!'))
+            os.system("pause")
+                
+driver.close()
+os.system("pause")
 driver.quit()
